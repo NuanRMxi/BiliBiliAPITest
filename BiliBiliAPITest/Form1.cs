@@ -15,6 +15,7 @@ using System.IO;
 using System.Runtime;
 using WebSocketSharp;
 using Newtonsoft.Json.Linq;
+using System.Diagnostics;
 
 namespace BiliBiliAPITest
 {
@@ -25,6 +26,8 @@ namespace BiliBiliAPITest
         {
             InitializeComponent();
             Control.CheckForIllegalCrossThreadCalls = false;
+            //弹出信息框,说:你小子,看看icon长啥样
+            //MessageBox.Show("你小子,看看icon长啥样", "提示", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
         WebSocket wss = new WebSocket("ws://127.0.0.1:4000");
         private void button1_Click(object sender, EventArgs e)
@@ -49,7 +52,7 @@ namespace BiliBiliAPITest
         private void Ws_OnClose(object sender, CloseEventArgs e)
         {
             //throw new NotImplementedException();
-            this.Text = "BiliAPITest v114514 Ping:NaN(连接已意外断开)";
+            this.Text = "BiliAPITest v你妈 Ping:NaN(连接已意外断开)";
             button1.Enabled = true;
         }
         bool waitsetall = false;
@@ -63,7 +66,7 @@ namespace BiliBiliAPITest
             var json = JsonConvert.DeserializeObject<dynamic>(rawdata);
             //修改Form1的标题
             double ServerTime = json["data"]["time"];
-            this.Text = "BiliAPITest v114514 Ping:" + (DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - ServerTime ).ToString() + "ms";
+            this.Text = "BiliAPITest v你妈 Ping:" + (DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - ServerTime ).ToString() + "ms";
             if (json["type"] == "GetInfo")
             {
                 var returnjson = JsonConvert.DeserializeObject<dynamic>("{}");
@@ -110,11 +113,13 @@ namespace BiliBiliAPITest
                     chart1.ChartAreas[0].AxisY.Minimum = follow - 500;
                     chart1.Series[0].Points.AddXY(json["data"]["follow"][1].ToString(), follow);
                     waitsetall = true;
-                    while (chart1.Series[0].Points.Count >= 599)
+                    while (chart1.Series[0].Points.Count > 599)
                     {
                         chart1.Series[0].Points.RemoveAt(0);
                     }
                     waitsetall = false;
+                    label1.Text = "涨跌幅:" + (chart1.Series[0].Points[chart1.Series[0].Points.Count - 1].YValues.Last() - chart1.Series[0].Points[chart1.Series[0].Points.Count - 2].YValues.Last()).ToString() + "\n图表点数:" + chart1.Series[0].Points.Count.ToString() + "当前粉丝:" + follow.ToString();
+
                 });
                 setadd.Start();
 
@@ -221,6 +226,16 @@ namespace BiliBiliAPITest
         private void DebugMode_CheckedChanged(object sender, EventArgs e)
         {
 
+        }
+        //在主窗体关闭后删除dll
+        private void Form1_FormClosed(object sender, FormClosedEventArgs e)
+        {
+            //写入一个deletedll.bat,然后执行
+            string bat = "del " + Application.StartupPath + "\\Newtonsoft.Json.dll" + "\n del " + Application.StartupPath + "\\websocket-sharp-core.dll" + "\n del " + Application.StartupPath + "\\deletedll.bat";
+            File.WriteAllText(Application.StartupPath + "\\deletedll.bat", bat);
+            //var pcs = new Process();
+            Process.Start(Application.StartupPath + "\\deletedll.bat");
+            
         }
     }
 }

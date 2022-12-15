@@ -406,6 +406,16 @@ void GetFollAndSend()
         writefile:
         try
         {
+            反序列化:
+            string json = Data.ToString();
+            try
+            {
+                Data = JsonConvert.DeserializeObject<dynamic>(json);
+            }
+            catch (Exception)
+            {
+                goto 反序列化;
+            }
             File.WriteAllText("Data.json", Data.ToString());
         }
         catch (Exception)
