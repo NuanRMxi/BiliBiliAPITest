@@ -77,213 +77,222 @@ void WebSocketStart()
                 socket.Close();
                 json = JsonConvert.DeserializeObject<dynamic>("{\"type\":\"failed\"}");
             }
+
+            try
+            {
+                if (json["type"] == "SetInfo")
+                {
+                    //检查当前socket是否存在于sockets中
+                    if (sockets.Contains(socket))//如果存在于未鉴权的socket中,那么就开始鉴权
+                    {
+                        string md5 = json["data"]["md5"];
+                        if (json["data"]["md5"] == "" || json["data"]["md5"] == null)
+                        {
+                            var returnjson = JsonConvert.DeserializeObject<dynamic>("{}");
+                            returnjson["type"] = "close";
+                            returnjson["data"] = JsonConvert.DeserializeObject<dynamic>("{}");
+                            returnjson["data"]["info"] = "你个肮脏的黑客(Hacked Code:0)";
+                            returnjson["data"]["time"] = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+                            Data["WaitAccpetUIDs"].Add(json["data"]["UID"]);
+                            socket.Send(returnjson.ToString());
+                            try
+                            {
+                                accpetsocket.Remove(socket);
+                                sockets.Remove(socket);
+                                socketindex.Remove(socket.ConnectionInfo.ClientIpAddress + ":" + socket.ConnectionInfo.ClientPort);
+                                SocketIndexandUID.Remove(socket.ConnectionInfo.ClientIpAddress + ":" + socket.ConnectionInfo.ClientPort);
+                            }
+                            catch
+                            {
+                            }
+                            socket.Close();
+                        }
+                        else if (md5.Length < 32 || md5.Length > 32)
+                        {
+                            var returnjson = JsonConvert.DeserializeObject<dynamic>("{}");
+                            returnjson["type"] = "close";
+                            returnjson["data"] = JsonConvert.DeserializeObject<dynamic>("{}");
+                            returnjson["data"]["info"] = "你个肮脏的黑客(Hacked Code:0)";
+                            returnjson["data"]["time"] = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+                            socket.Send(returnjson.ToString());
+                            try
+                            {
+                                accpetsocket.Remove(socket);
+                                sockets.Remove(socket);
+                                socketindex.Remove(socket.ConnectionInfo.ClientIpAddress + ":" + socket.ConnectionInfo.ClientPort);
+                                SocketIndexandUID.Remove(socket.ConnectionInfo.ClientIpAddress + ":" + socket.ConnectionInfo.ClientPort);
+                            }
+                            catch
+                            {
+                            }
+                            socket.Close();
+                        }
+                        else
+                        {
+                            accpetsocket.Add(socket);
+                            sockets.Remove(socket);
+                            Console.WriteLine(json["data"]["md5"].ToString());
+                            var returnjson = JsonConvert.DeserializeObject<dynamic>("{}");
+                            returnjson["type"] = "open";
+                            returnjson["data"] = JsonConvert.DeserializeObject<dynamic>("{}");
+                            returnjson["data"]["time"] = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+                            socket.Send(returnjson.ToString());
+                        }
+                    }
+                    else//否则可能是伪造的客户端
+                    {
+                        //Console.WriteLine("Hacked!");
+                        var returnjson = JsonConvert.DeserializeObject<dynamic>("{}");
+                        returnjson["type"] = "close";
+                        returnjson["data"] = JsonConvert.DeserializeObject<dynamic>("{}");
+                        returnjson["data"]["info"] = "你个肮脏的黑客(Hacked Code:0)";
+                        returnjson["data"]["time"] = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+                        socket.Send(returnjson.ToString());
+                        try
+                        {
+                            accpetsocket.Remove(socket);
+                            sockets.Remove(socket);
+                            socketindex.Remove(socket.ConnectionInfo.ClientIpAddress + ":" + socket.ConnectionInfo.ClientPort);
+                            SocketIndexandUID.Remove(socket.ConnectionInfo.ClientIpAddress + ":" + socket.ConnectionInfo.ClientPort);
+                        }
+                        catch
+                        {
+                        }
+                        socket.Close();
+                    }
+                }
+                if (json["type"] == "MetaData")
+                {
+                    Console.WriteLine(socket.ConnectionInfo.ClientIpAddress + ":" + socket.ConnectionInfo.ClientPort + " ReturnMetaData");
+                    try
+                    {
+                        waitingsockets.Remove(socket);
+                    }
+                    catch (Exception)
+                    {
+                    }
+
+                }
+                if (json["type"] == "Statistics_Request")
+                {
+                    if (accpetsocket.Contains(socket))
+                    {
+                        JArray jarray = Data["AccpetedUIDs"];
+                        List<string> jsonarray = new List<string>();
+                        for (int i = 0; i < jarray.Count; i++)
+                        {
+                            jsonarray.Add(jarray[i].ToString());
+                        }
+                        //JsonArray jsonarray = jarray;
+                        if (jsonarray.Contains(json["data"]["uid"].ToString()))
+                        {
+                            var returnjson = JsonConvert.DeserializeObject<dynamic>("{}");
+                            returnjson["type"] = "Info";
+                            returnjson["data"] = JsonConvert.DeserializeObject<dynamic>("{}");
+                            returnjson["data"]["time"] = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+                            returnjson["data"]["info"] = "UID已存在,请点击开始接收";
+                            socket.Send(returnjson.ToString());
+                        }
+                        else
+                        {
+                            var returnjson = JsonConvert.DeserializeObject<dynamic>("{}");
+                            returnjson["type"] = "Info";
+                            returnjson["data"] = JsonConvert.DeserializeObject<dynamic>("{}");
+                            returnjson["data"]["time"] = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+                            returnjson["data"]["info"] = "请求发送成功,等待服务器处理";
+                            Data["WaitAccpetUIDs"].Add(json["data"]["uid"].ToString());
+                            socket.Send(returnjson.ToString());
+                        }
+
+                    }
+                    else
+                    {
+                        var returnjson = JsonConvert.DeserializeObject<dynamic>("{}");
+                        returnjson["type"] = "close";
+                        returnjson["data"] = JsonConvert.DeserializeObject<dynamic>("{}");
+                        returnjson["data"]["info"] = "你个肮脏的黑客(Hacked Code:2)";
+                        returnjson["data"]["time"] = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+                        socket.Send(returnjson.ToString());
+                        try
+                        {
+                            accpetsocket.Remove(socket);
+                            sockets.Remove(socket);
+                            socketindex.Remove(socket.ConnectionInfo.ClientIpAddress + ":" + socket.ConnectionInfo.ClientPort);
+                            SocketIndexandUID.Remove(socket.ConnectionInfo.ClientIpAddress + ":" + socket.ConnectionInfo.ClientPort);
+                        }
+                        catch
+                        {
+                        }
+                        socket.Close();
+                    }
+                }
+                if (json["type"] == "Get")
+                {
+                    if (accpetsocket.Contains(socket))
+                    {
+                        //Console.WriteLine((Data["AccpetedUIDs"].ToString() + (json["data"]["uid"].ToString()).ToString()));
+                        bool isdo = false;
+                        for (int i = 0; i < Data["AccpetedUIDs"].Count; i++)
+                        {
+                            if (Data["AccpetedUIDs"][i] == json["data"]["uid"])
+                            {
+                                isdo = true;
+                            }
+                        }
+                        if (SocketIndexandUID.ContainsKey(socket.ConnectionInfo.ClientIpAddress + ":" + socket.ConnectionInfo.ClientPort))
+                        {
+                            isdo = false;
+                        }
+                        if (isdo)
+                        {
+                            //回复客户端开始接收
+                            var returnjson = JsonConvert.DeserializeObject<dynamic>("{}");
+                            returnjson["type"] = "SetAll";
+                            returnjson["data"] = JsonConvert.DeserializeObject<dynamic>("{}");
+                            returnjson["data"]["time"] = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+                            returnjson["data"]["json"] = Data["AllData"][json["data"]["uid"].ToString()];
+                            socket.Send(returnjson.ToString());
+                            SocketIndexandUID.Add(socket.ConnectionInfo.ClientIpAddress + ":" + socket.ConnectionInfo.ClientPort, json["data"]["uid"].ToString());
+                        }
+                        else
+                        {
+                            //提示客户端UID不存在,请尝试申请
+                            var returnjson = JsonConvert.DeserializeObject<dynamic>("{}");
+                            returnjson["type"] = "Info";
+                            returnjson["data"] = JsonConvert.DeserializeObject<dynamic>("{}");
+                            returnjson["data"]["time"] = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+                            returnjson["data"]["info"] = "UID不存在,请尝试申请或你已经在接收一个uid的统计了";
+                            socket.Send(returnjson.ToString());
+                        }
+                    }
+                    else
+                    {
+                        var returnjson = JsonConvert.DeserializeObject<dynamic>("{}");
+                        returnjson["type"] = "close";
+                        returnjson["data"] = JsonConvert.DeserializeObject<dynamic>("{}");
+                        returnjson["data"]["info"] = "你个肮脏的黑客(Hacked Code:2)";
+                        returnjson["data"]["time"] = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+                        socket.Send(returnjson.ToString());
+                        try
+                        {
+                            accpetsocket.Remove(socket);
+                            sockets.Remove(socket);
+                            socketindex.Remove(socket.ConnectionInfo.ClientIpAddress + ":" + socket.ConnectionInfo.ClientPort);
+                            SocketIndexandUID.Remove(socket.ConnectionInfo.ClientIpAddress + ":" + socket.ConnectionInfo.ClientPort);
+                        }
+                        catch
+                        {
+                        }
+                        socket.Close();
+                    }
+                }
+            }
+            catch (IOException iex)
+            {
+                Console.WriteLine("在OnMessage中捕获到错误,错误为:" + iex.ToString() + "\n收到的消息原文本为:" + message);
+
+            }
             
-            if (json["type"] == "SetInfo")
-            {
-                //检查当前socket是否存在于sockets中
-                if (sockets.Contains(socket))//如果存在于未鉴权的socket中,那么就开始鉴权
-                {
-                    string md5 = json["data"]["md5"];
-                    if (json["data"]["md5"] == "" || json["data"]["md5"] == null)
-                    {
-                        var returnjson = JsonConvert.DeserializeObject<dynamic>("{}");
-                        returnjson["type"] = "close";
-                        returnjson["data"] = JsonConvert.DeserializeObject<dynamic>("{}");
-                        returnjson["data"]["info"] = "你个肮脏的黑客(Hacked Code:0)";
-                        returnjson["data"]["time"] = DateTimeOffset.Now.ToUnixTimeMilliseconds();
-                        Data["WaitAccpetUIDs"].Add(json["data"]["UID"]);
-                        socket.Send(returnjson.ToString());
-                        try
-                        {
-                            accpetsocket.Remove(socket);
-                            sockets.Remove(socket);
-                            socketindex.Remove(socket.ConnectionInfo.ClientIpAddress + ":" + socket.ConnectionInfo.ClientPort);
-                            SocketIndexandUID.Remove(socket.ConnectionInfo.ClientIpAddress + ":" + socket.ConnectionInfo.ClientPort);
-                        }
-                        catch
-                        {
-                        }
-                        socket.Close();
-                    }
-                    else if (md5.Length < 32 || md5.Length > 32)
-                    {
-                        var returnjson = JsonConvert.DeserializeObject<dynamic>("{}");
-                        returnjson["type"] = "close";
-                        returnjson["data"] = JsonConvert.DeserializeObject<dynamic>("{}");
-                        returnjson["data"]["info"] = "你个肮脏的黑客(Hacked Code:0)";
-                        returnjson["data"]["time"] = DateTimeOffset.Now.ToUnixTimeMilliseconds();
-                        socket.Send(returnjson.ToString());
-                        try
-                        {
-                            accpetsocket.Remove(socket);
-                            sockets.Remove(socket);
-                            socketindex.Remove(socket.ConnectionInfo.ClientIpAddress + ":" + socket.ConnectionInfo.ClientPort);
-                            SocketIndexandUID.Remove(socket.ConnectionInfo.ClientIpAddress + ":" + socket.ConnectionInfo.ClientPort);
-                        }
-                        catch
-                        {
-                        }
-                        socket.Close();
-                    }
-                    else
-                    {
-                        accpetsocket.Add(socket);
-                        sockets.Remove(socket);
-                        Console.WriteLine(json["data"]["md5"].ToString());
-                        var returnjson = JsonConvert.DeserializeObject<dynamic>("{}");
-                        returnjson["type"] = "open";
-                        returnjson["data"] = JsonConvert.DeserializeObject<dynamic>("{}");
-                        returnjson["data"]["time"] = DateTimeOffset.Now.ToUnixTimeMilliseconds();
-                        socket.Send(returnjson.ToString());
-                    }
-                }
-                else//否则可能是伪造的客户端
-                {
-                    //Console.WriteLine("Hacked!");
-                    var returnjson = JsonConvert.DeserializeObject<dynamic>("{}");
-                    returnjson["type"] = "close";
-                    returnjson["data"] = JsonConvert.DeserializeObject<dynamic>("{}");
-                    returnjson["data"]["info"] = "你个肮脏的黑客(Hacked Code:0)";
-                    returnjson["data"]["time"] = DateTimeOffset.Now.ToUnixTimeMilliseconds();
-                    socket.Send(returnjson.ToString());
-                    try
-                    {
-                        accpetsocket.Remove(socket);
-                        sockets.Remove(socket);
-                        socketindex.Remove(socket.ConnectionInfo.ClientIpAddress + ":" + socket.ConnectionInfo.ClientPort);
-                        SocketIndexandUID.Remove(socket.ConnectionInfo.ClientIpAddress + ":" + socket.ConnectionInfo.ClientPort);
-                    }
-                    catch
-                    {
-                    }
-                    socket.Close();
-                }
-            }
-            if (json["type"] == "MetaData")
-            {
-                Console.WriteLine(socket.ConnectionInfo.ClientIpAddress + ":" + socket.ConnectionInfo.ClientPort + " ReturnMetaData");
-                try
-                {
-                    waitingsockets.Remove(socket);
-                }
-                catch (Exception)
-                {
-                }
-                
-            }
-            if (json["type"] == "Statistics_Request")
-            {
-                if (accpetsocket.Contains(socket))
-                {
-                    JArray jarray = Data["AccpetedUIDs"];
-                    List<string> jsonarray = new List<string>();
-                    for (int i = 0; i < jarray.Count; i++)
-                    {
-                        jsonarray.Add(jarray[i].ToString());
-                    }
-                    //JsonArray jsonarray = jarray;
-                    if (jsonarray.Contains(json["data"]["uid"].ToString()))
-                    {
-                        var returnjson = JsonConvert.DeserializeObject<dynamic>("{}");
-                        returnjson["type"] = "Info";
-                        returnjson["data"] = JsonConvert.DeserializeObject<dynamic>("{}");
-                        returnjson["data"]["time"] = DateTimeOffset.Now.ToUnixTimeMilliseconds();
-                        returnjson["data"]["info"] = "UID已存在,请点击开始接收";
-                        socket.Send(returnjson.ToString());
-                    }
-                    else
-                    {
-                        var returnjson = JsonConvert.DeserializeObject<dynamic>("{}");
-                        returnjson["type"] = "Info";
-                        returnjson["data"] = JsonConvert.DeserializeObject<dynamic>("{}");
-                        returnjson["data"]["time"] = DateTimeOffset.Now.ToUnixTimeMilliseconds();
-                        returnjson["data"]["info"] = "请求发送成功,等待服务器处理";
-                        Data["WaitAccpetUIDs"].Add(json["data"]["uid"].ToString());
-                        socket.Send(returnjson.ToString());
-                    }
-                    
-                }
-                else
-                {
-                    var returnjson = JsonConvert.DeserializeObject<dynamic>("{}");
-                    returnjson["type"] = "close";
-                    returnjson["data"] = JsonConvert.DeserializeObject<dynamic>("{}");
-                    returnjson["data"]["info"] = "你个肮脏的黑客(Hacked Code:2)";
-                    returnjson["data"]["time"] = DateTimeOffset.Now.ToUnixTimeMilliseconds();
-                    socket.Send(returnjson.ToString());
-                    try
-                    {
-                        accpetsocket.Remove(socket);
-                        sockets.Remove(socket);
-                        socketindex.Remove(socket.ConnectionInfo.ClientIpAddress + ":" + socket.ConnectionInfo.ClientPort);
-                        SocketIndexandUID.Remove(socket.ConnectionInfo.ClientIpAddress + ":" + socket.ConnectionInfo.ClientPort);
-                    }
-                    catch
-                    {
-                    }
-                    socket.Close();
-                }
-            }
-            if (json["type"] == "Get")
-            {
-                if (accpetsocket.Contains(socket))
-                {
-                    //Console.WriteLine((Data["AccpetedUIDs"].ToString() + (json["data"]["uid"].ToString()).ToString()));
-                    bool isdo = false;
-                    for (int i = 0; i < Data["AccpetedUIDs"].Count; i++)
-                    {
-                        if (Data["AccpetedUIDs"][i] == json["data"]["uid"])
-                        {
-                            isdo = true;
-                        }
-                    }
-                    if (SocketIndexandUID.ContainsKey(socket.ConnectionInfo.ClientIpAddress + ":" + socket.ConnectionInfo.ClientPort))
-                    {
-                        isdo = false;
-                    }
-                    if (isdo)
-                    {
-                        //回复客户端开始接收
-                        var returnjson = JsonConvert.DeserializeObject<dynamic>("{}");
-                        returnjson["type"] = "SetAll";
-                        returnjson["data"] = JsonConvert.DeserializeObject<dynamic>("{}");
-                        returnjson["data"]["time"] = DateTimeOffset.Now.ToUnixTimeMilliseconds();
-                        returnjson["data"]["json"] = Data["AllData"][json["data"]["uid"].ToString()];
-                        socket.Send(returnjson.ToString());
-                        SocketIndexandUID.Add(socket.ConnectionInfo.ClientIpAddress + ":" + socket.ConnectionInfo.ClientPort, json["data"]["uid"].ToString());    
-                    }
-                    else
-                    {
-                        //提示客户端UID不存在,请尝试申请
-                        var returnjson = JsonConvert.DeserializeObject<dynamic>("{}");
-                        returnjson["type"] = "Info";
-                        returnjson["data"] = JsonConvert.DeserializeObject<dynamic>("{}");
-                        returnjson["data"]["time"] = DateTimeOffset.Now.ToUnixTimeMilliseconds();
-                        returnjson["data"]["info"] = "UID不存在,请尝试申请或你已经在接收一个uid的统计了";
-                        socket.Send(returnjson.ToString());
-                    }
-                }
-                else
-                {
-                    var returnjson = JsonConvert.DeserializeObject<dynamic>("{}");
-                    returnjson["type"] = "close";
-                    returnjson["data"] = JsonConvert.DeserializeObject<dynamic>("{}");
-                    returnjson["data"]["info"] = "你个肮脏的黑客(Hacked Code:2)";
-                    returnjson["data"]["time"] = DateTimeOffset.Now.ToUnixTimeMilliseconds();
-                    socket.Send(returnjson.ToString());
-                    try
-                    {
-                        accpetsocket.Remove(socket);
-                        sockets.Remove(socket);
-                        socketindex.Remove(socket.ConnectionInfo.ClientIpAddress + ":" + socket.ConnectionInfo.ClientPort);
-                        SocketIndexandUID.Remove(socket.ConnectionInfo.ClientIpAddress + ":" + socket.ConnectionInfo.ClientPort);
-                    }
-                    catch
-                    {
-                    }
-                    socket.Close();
-                }
-            }
             Random rdm = new Random();
             Thread.Sleep(rdm.Next(0, 1000));
             try
