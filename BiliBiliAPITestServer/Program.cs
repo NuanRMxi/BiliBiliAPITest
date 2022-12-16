@@ -419,13 +419,13 @@ void GetFollAndSend()
             string json = Data.ToString();
             try
             {
-                Data = JsonConvert.DeserializeObject<dynamic>(json);
+                var test = JsonConvert.DeserializeObject<dynamic>(json);
             }
             catch (Exception)
             {
                 goto 反序列化;
             }
-            File.WriteAllText("Data.json", Data.ToString());
+            File.WriteAllText("Data.json", json);
         }
         catch (Exception)
         {
