@@ -1,3 +1,3 @@
 # BiliBiliAPITest
-除夕不放假，happy lunar year！
-可以看看代码给点优化建议,目前这玩意和屎山差不多
+This project has stopped coding
+此项目停止开发
